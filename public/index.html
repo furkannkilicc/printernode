@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Yazıcı Listesi</title>
+    
+</head>
+<body>
+    <h1>Yazıcı Listesi</h1>
+    <ul id="printerList"></ul>
+    
+    <h2>Belge Yükle ve Yazdır</h2>
+    <form id="printForm">
+        <select id="printerSelect" name="printer">
+        </select>
+        <input type="file" id="fileInput" name="document" accept=".pdf">
+        <input type="submit" value="Yazdır">
+    </form>
+  
+    <script>
+       
+        fetch('http://localhost:8080/printers')
+            .then(response => response.json())
+            .then(printers => {
+                const printerList = document.getElementById('printerList');
+                const printerSelect = document.getElementById('printerSelect');
+                printers.forEach((printer, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${index + 1}. ${printer}`;
+                    printerList.appendChild(listItem);
+                    const option = document.createElement('option');
+                    option.value = printer;
+                    option.text = printer;
+                    printerSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Yazıcıları alırken hata oluştu: indexhtml ', error);
+            });
+
+        // WebSocket bağlantısı kurun
+        const ws = new WebSocket('ws://localhost:8080');
+
+        // Belge yükleme ve yazdırma işlemi
+        document.getElementById('printForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const printer = document.getElementById('printerSelect').value;
+            const fileInput = document.getElementById('fileInput');
+            const document = fileInput.files[0];
+
+            const formData = new FormData();
+            formData.append('printer', printer);
+            formData.append('document', document);
+
+            fetch('http://localhost:8080/print', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(responseData => {
+                    console.log('Gelen veri:', responseData);
+                })
+                .catch(error => {
+                    console.error('Yazdırma isteği gönderirken hata oluştu: ', error);
+                });
+        });
+    </script>
+</body>
+</html>
